@@ -38,10 +38,10 @@
 
 ### Altium ###
 # Previews Folders
-/__Previews/*
+/Hardware/__Previews/*
 
 # History Folders
-/History/*
+/Hardware/History/*
 
 # Project Logs
 Project\ Logs*/
