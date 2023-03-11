@@ -1,3 +1,8 @@
+# woloszw's
+
+
+
+
 # Prerequisites
 *.d
 
@@ -30,3 +35,22 @@
 *.exe
 *.out
 *.app
+
+### Altium ###
+# Previews Folders
+/__Previews/*
+
+# History Folders
+/History/*
+
+# Project Logs
+Project\ Logs*/
+
+# Project Outputs
+Project\ Outputs*/
+
+# Auto-conversion notices
+.PcbDoc.htm
+
+# Access lock file for dbLib sources
+/*.ldb
