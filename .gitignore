@@ -38,7 +38,7 @@
 
 ### Altium ###
 # Previews Folders
-/Hardware/__Previews/*
+/Hardware/Master/FPS_Master/__Previews/*
 
 # History Folders
 /Hardware/History/*
