@@ -3,6 +3,10 @@
 /Hardware/Master/FPS_Master/*
 /Hardware/Slave/FPS_Slave/*
 
+# mstankiew's
+/Software/Master/build
+/Software/Master/.vscode
+
 # Prerequisites
 *.d
 
