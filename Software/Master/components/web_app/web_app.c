@@ -54,6 +54,7 @@ char page_src[] = "<!DOCTYPE html> \
                <p>          <a href=\"/alarm2on\"><button class=\"button\">ON</button></a>          <a href=\"/alarm2off\"><button class=\"button button2\">OFF</button></a>        </p> \
                <hr /> \
                <h1> Nodes readings </h1> \
+               <p> <a href=\"/\"><button class=\"button\">Refresh</button></a> </p> \
                <h2> Node number 1 </h2> \
                <p> Temperature: %d </p> \
                <p> Smoke: %d </p> \

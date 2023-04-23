@@ -6,6 +6,8 @@
 # mstankiew's
 /Software/Master/build
 /Software/Master/.vscode
+*.bkp
+*.dtmp
 
 # Prerequisites
 *.d
