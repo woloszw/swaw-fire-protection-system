@@ -1,7 +1,7 @@
 # woloszw's
-
-
-
+/Software/Slave/FPS_Slave/*
+/Hardware/Master/FPS_Master/*
+/Hardware/Slave/FPS_Slave/*
 
 # Prerequisites
 *.d
