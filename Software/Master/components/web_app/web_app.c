@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "web_app.h"
 #include "net_connection.h"
+#include "data_gather.h"
 
 esp_err_t get_req_handler(httpd_req_t *req);
 esp_err_t pump_on_handler(httpd_req_t *req);
@@ -18,6 +19,7 @@ esp_err_t alarm_on_handler(httpd_req_t *req);
 esp_err_t alarm_off_handler(httpd_req_t *req);
 
 static const char *TAG = "web_app"; // TAG for debug
+static nodes_status_t system_status;
 
 extern led_strip_handle_t led_strip;
 
@@ -68,6 +70,8 @@ char page_src[] = "<!DOCTYPE html> \
       </div> \
    </body> \
 </html>";
+
+void web_app_task(void* params);
 
 // HTTP uri list
 httpd_uri_t uri_array[] = {
@@ -145,5 +149,25 @@ esp_err_t web_app_start(void){
     setup_server(uri_array, uri_array_size);
     ESP_LOGI(TAG, "numner of uris created: %d", uri_array_size);
 
+    xTaskCreate(web_app_task, "wa_task", 2*1024, NULL, 3, NULL);
+
     return ESP_OK;
+}
+
+void web_app_task(void* params){
+    while(1){
+        if(xQueueReceive(gathered_data_queue, &system_status, 1000) == pdTRUE){
+            ESP_LOGI(TAG, "GATHERED DATA");
+            /*for(uint8_t i = 0; i < NODES_MAX_NUM; i++){
+                printf("ID = %d, online = %d", i, system_status.nodes[i].online);
+                if(system_status.nodes[i].online){
+                    printf(", fire = %d, smoke = %d, temp = %d, last message time = %d\n",
+                    system_status.nodes[i].fire,
+                    system_status.nodes[i].smoke,
+                    (int)system_status.nodes[i].temp,
+                    (int)system_status.nodes[i].last_message_time);
+                }
+            }*/
+        }
+    }
 }

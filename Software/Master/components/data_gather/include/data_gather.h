@@ -7,16 +7,21 @@
 
 typedef struct __attribute__((__packed__)){
     bool online;
-    float fire;
-    float smoke;
+    uint8_t fire;
+    uint8_t smoke;
     float temp;
+    uint64_t last_message_time;
 } node_status_t;
 
 typedef struct __attribute__((__packed__)){
-    bool pump_stat;
-    bool alarm_stat;
     node_status_t nodes[NODES_MAX_NUM];
-}system_status_t;
+}nodes_status_t;
+
+typedef struct __attribute__((__packed__)){
+	uint16_t smoke_val;
+	uint16_t flame_val;
+	int16_t	 temp_val;
+}payload_slv_t;
 
 extern QueueHandle_t gathered_data_queue;
 
