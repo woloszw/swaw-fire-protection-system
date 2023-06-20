@@ -11,8 +11,8 @@
 
 static const char *TAG = "net_connection"; // TAG for debug
 
-#define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_WIFI_SSID "galaxy"
+#define EXAMPLE_ESP_WIFI_PASS "qazwsx1234"
 #define EXAMPLE_ESP_MAXIMUM_RETRY CONFIG_ESP_MAXIMUM_RETRY
 
 /* FreeRTOS event group to signal when we are connected*/

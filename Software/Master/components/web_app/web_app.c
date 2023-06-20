@@ -47,10 +47,10 @@ char page_src[] = "<!DOCTYPE html> \
             <div class=\"card\"> \
                <h1> Effectors control </h1> \
                <p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual pump control</strong></p> \
-               <p>Pump state: <strong> %s</strong></p> \
+               <p>Pump state: <strong> pustat </strong></p> \
                <p>          <a href=\"/pump2on\"><button class=\"button\">ON</button></a>          <a href=\"/pump2off\"><button class=\"button button2\">OFF</button></a>        </p> \
                <p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual alarm control</strong></p> \
-               <p>Alarm state: <strong> %s</strong></p> \
+               <p>Alarm state: <strong> alstat </strong></p> \
                <p>          <a href=\"/alarm2on\"><button class=\"button\">ON</button></a>          <a href=\"/alarm2off\"><button class=\"button button2\">OFF</button></a>        </p> \
                <hr /> \
                <h1> Nodes readings </h1> \
@@ -106,32 +106,33 @@ esp_err_t get_req_handler(httpd_req_t *req)
 
 esp_err_t pump_on_handler(httpd_req_t *req)
 {
-    led_strip_set_pixel(led_strip, 0, 0, 16, 0);
-    led_strip_refresh(led_strip);
+    //led_strip_set_pixel(led_strip, 0, 0, 16, 0);
+    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP pump on requested\n");
+    //parse_webpage(page_src, system_status);
     return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
 }
 
 esp_err_t pump_off_handler(httpd_req_t *req)
 {
-    led_strip_set_pixel(led_strip, 0, 16, 0, 0);
-    led_strip_refresh(led_strip);
+    //led_strip_set_pixel(led_strip, 0, 16, 0, 0);
+    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP pump off requested\n");
     return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
 }
 
 esp_err_t alarm_on_handler(httpd_req_t *req)
 {
-    led_strip_set_pixel(led_strip, 0, 0, 16, 16);
-    led_strip_refresh(led_strip);
+    //led_strip_set_pixel(led_strip, 0, 0, 16, 16);
+    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP alarm on requested\n");
     return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
 }
 
 esp_err_t alarm_off_handler(httpd_req_t *req)
 {
-    led_strip_set_pixel(led_strip, 0, 16, 16, 0);
-    led_strip_refresh(led_strip);
+    //led_strip_set_pixel(led_strip, 0, 16, 16, 0);
+    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP alarm off requested\n");
     return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
 }
