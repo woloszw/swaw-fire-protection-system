@@ -72,23 +72,41 @@ void data_gather_task(void* params){
         // xQueueSend(gathered_data_queue, &system_status, 0);
         // vTaskDelay(1000);
         //Wait for message to be received
+
+        //Configure message to transmit
         twai_message_t message;
-        if (twai_receive(&message, pdMS_TO_TICKS(10000)) == ESP_OK) {
-            ESP_LOGI(TAG, "Message received\n");
-            //Process received message
-            if (message.extd) {
-                ESP_LOGI(TAG, "Message is in Extended Format\n");
-            } else {
-                ESP_LOGI(TAG, "Message is in Standard Format\n");
-            }
-            printf("ID is %ld\n", message.identifier);
-            if (!(message.rtr)) {
-                for (int i = 0; i < message.data_length_code; i++) {
-                    printf("Data byte %d = %d\n", i, message.data[i]);
-                }
-            }
+        message.identifier = 0xAAAA;
+        message.extd = 1;
+        message.data_length_code = 4;
+        for (int i = 0; i < 4; i++) {
+            message.data[i] = 0;
+        }
+
+        //Queue message for transmission
+        if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
+            printf("Message queued for transmission\n");
         } else {
-            ESP_LOGI(TAG, "Failed to receive message\n");
-}
+            printf("Failed to queue message for transmission\n");
+        }
+        vTaskDelay(100);
+
+        // twai_message_t message;
+        // if (twai_receive(&message, pdMS_TO_TICKS(10000)) == ESP_OK) {
+        //     ESP_LOGI(TAG, "Message received\n");
+        //     //Process received message
+        //     if (message.extd) {
+        //         ESP_LOGI(TAG, "Message is in Extended Format\n");
+        //     } else {
+        //         ESP_LOGI(TAG, "Message is in Standard Format\n");
+        //     }
+        //     printf("ID is %ld\n", message.identifier);
+        //     if (!(message.rtr)) {
+        //         for (int i = 0; i < message.data_length_code; i++) {
+        //             printf("Data byte %d = %d\n", i, message.data[i]);
+        //         }
+        //     }
+        // } else {
+        //     ESP_LOGI(TAG, "Failed to receive message\n");
+        // }
     }
 }
