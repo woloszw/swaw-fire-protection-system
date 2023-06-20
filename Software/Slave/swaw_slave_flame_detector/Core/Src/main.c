@@ -108,12 +108,13 @@ int main(void)
   if (ds18b20_init() != HAL_OK) {
     Error_Handler();
   }
-
   uint8_t ds1[DS18B20_ROM_CODE_SIZE];
 
   if (ds18b20_read_address(ds1) != HAL_OK) {
     Error_Handler();
   }
+
+  HAL_CAN_Start(&hcan);
   //dip switch slave id read
   int tmp_id;
   tmp_id =HAL_GPIO_ReadPin(ID_0_PIN_GPIO_Port, ID_0_PIN_Pin);
@@ -148,7 +149,6 @@ int main(void)
  	  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 3) {
  	    // Wszystkie skrzynki nadawcze są wolne, transmisja zakończona
  	  }
-
 
 
 
