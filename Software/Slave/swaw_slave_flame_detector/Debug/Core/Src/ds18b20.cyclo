@@ -1,0 +1,6 @@
+ds18b20.c:14:19:ds18b20_init	1
+ds18b20.c:19:19:ds18b20_read_address	4
+ds18b20.c:38:26:send_cmd	4
+ds18b20.c:56:19:ds18b20_start_measure	1
+ds18b20.c:62:26:ds18b20_read_scratchpad	4
+ds18b20.c:80:9:ds18b20_get_temp	2
