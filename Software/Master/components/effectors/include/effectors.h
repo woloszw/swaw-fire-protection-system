@@ -1,0 +1,2 @@
+
+void effectors_start();

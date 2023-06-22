@@ -1,5 +1,6 @@
 #include "web_app.h"
 #include "data_gather.h"
+#include "effectors.h"
 #include "led_strip.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -37,9 +38,9 @@ void app_main()
     ESP_ERROR_CHECK(ret);
 
     // GPIO initialization
-    //configure_led();
 
     // web app initialization
-    web_app_start();
     data_gather_start();
+    web_app_start();
+    effectors_start();
 }

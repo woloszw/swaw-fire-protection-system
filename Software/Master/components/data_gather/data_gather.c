@@ -5,6 +5,7 @@
 #include "driver/twai.h"
 #include <string.h>
 #include <sys/time.h>
+#include "system_status.h"
 
 //--------------------------------------------
 // defines
@@ -15,7 +16,6 @@
 //--------------------------------------------
 // global variables
 //--------------------------------------------
-QueueHandle_t gathered_data_queue;
 
 //--------------------------------------------
 // private function prototypes
@@ -26,7 +26,6 @@ void data_gather_task(void* params);
 // private variables
 //--------------------------------------------
 static const char *TAG = "data_gather"; // TAG for debug
-static nodes_status_t system_status;
 
 //--------------------------------------------
 // public functions
@@ -34,14 +33,21 @@ static nodes_status_t system_status;
 esp_err_t data_gather_start(void){
     ESP_LOGI(TAG, "starting data gather");
 
+    system_status_init();
     xTaskCreate(data_gather_task, "data_gather", DATA_GATHER_STACK_SIZE_KB*1024, NULL, 3, NULL);
-    gathered_data_queue = xQueueCreate(DATA_QUEUE_LEN, sizeof(nodes_status_t));
     return ESP_OK;
 }
 
 //--------------------------------------------
 // private functions
 //--------------------------------------------
+
+int64_t curr_time_ms(void){
+    struct timeval tv_now;
+    gettimeofday(&tv_now, NULL);
+    return (int64_t)tv_now.tv_sec * 1000L + (int64_t)tv_now.tv_usec;
+}
+
 void data_gather_task(void* params){
 
     //Initialize configuration structures using macro initializers
@@ -66,33 +72,34 @@ void data_gather_task(void* params){
     }
 
     for(uint8_t i = 0; i < NODES_MAX_NUM; i++){
-        system_status.nodes[i].online = false;
+        sys_stat_set_online(i, false);
     }
 
     while(1){
         twai_message_t message;
         uint8_t slave_id;
+        bool ID_bit_0_set;
+        bool payload_len_6B;
         payload_slv_t slave_data;
-        if (twai_receive(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
-            struct timeval tv_now;
-            gettimeofday(&tv_now, NULL);
-            int64_t time_us = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+
+        if (twai_receive(&message, pdMS_TO_TICKS(3500)) == ESP_OK) {
             ESP_LOGI(TAG, "Message received");
-            if (!(message.rtr)) {
+
+            ID_bit_0_set = (message.identifier & 0x01) == 0x01;  // bit 0 indicates that frame carries data
+            payload_len_6B = message.data_length_code == sizeof(payload_slv_t);
+            if (!(message.rtr) && ID_bit_0_set && payload_len_6B) {
                 memcpy(&slave_data, message.data, sizeof(payload_slv_t));
                 slave_id = message.identifier >> 8;
-                system_status.nodes[slave_id].online = true;
-                system_status.nodes[slave_id].fire = slave_data.flame_val;
-                system_status.nodes[slave_id].smoke = slave_data.smoke_val;
-                system_status.nodes[slave_id].temp = (float)slave_data.temp_val/16.0f;
-                system_status.nodes[slave_id].last_message_time = time_us/1000;
-                // printf("data_gather: slave ID: %d, smoke: %d, flame: %d temp: %d, time: %ld\n", 
-                // slave_id, slave_data.smoke_val, slave_data.flame_val, (int16_t)(slave_data.temp_val/16),
-                //  (uint32_t)system_status.nodes[slave_id].last_message_time);
+                if(slave_id >= 0 && slave_id < 8){
+                    sys_stat_set_online(slave_id, true);
+                    sys_stat_set_fire(slave_id, slave_data.flame_val);
+                    sys_stat_set_smoke(slave_id, slave_data.smoke_val);
+                    sys_stat_set_temp(slave_id, slave_data.temp_val/16.0f);
+                    sys_stat_set_last_message_time(slave_id, curr_time_ms());
+                }
             }
         } else {
             ESP_LOGI(TAG, "Failed to receive message\n");
         }
-        xQueueSend(gathered_data_queue, &system_status, 0);
     }
 }

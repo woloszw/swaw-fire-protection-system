@@ -10,7 +10,7 @@
 #include "esp_log.h"
 #include "web_app.h"
 #include "net_connection.h"
-#include "data_gather.h"
+#include "system_status.h"
 
 esp_err_t get_req_handler(httpd_req_t *req);
 esp_err_t pump_on_handler(httpd_req_t *req);
@@ -19,57 +19,88 @@ esp_err_t alarm_on_handler(httpd_req_t *req);
 esp_err_t alarm_off_handler(httpd_req_t *req);
 
 static const char *TAG = "web_app"; // TAG for debug
-static nodes_status_t system_status;
 
 extern led_strip_handle_t led_strip;
 
 char page_src[] = "<!DOCTYPE html> \
 <html> \
-   <head> \
-      <style type=\"text/css\"> \
-        html {  font-family: Arial;  display: inline-block;  margin: 0px auto;  text-align: center;} \
-        h1{  color: #070812;  padding: 2vh;} \
-        .button {  display: inline-block;  background-color: #b30000; //red color  border: none;  border-radius: 4px;  color: white;  padding: 16px 40px;  text-decoration: none;  font-size: 30px;  margin: 2px;  cursor: pointer;} \
-        .button2 {  background-color: #364cf4; //blue color} \
-        .content {   padding: 50px;} \
-        .card-grid {  max-width: 800px;  margin: 0 auto;  display: grid;  grid-gap: 2rem;  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));} \
-        .card {  background-color: white;  box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);} \
-        .card-title {  font-size: 1.2rem;  font-weight: bold;  color: #034078} \
-      </style> \
-      <title>Fire detection system dashboard</title> \
-      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> \
-      <link rel=\"icon\" href=\"data:,\"> \
-      <link rel=\"stylesheet\" href=\"https://use.fontawesome.com/releases/v5.7.2/css/all.css\"    integrity=\"sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr\" crossorigin=\"anonymous\"> \
-      <link rel=\"stylesheet\" type=\"text/css\" > \
-   </head> \
-   <body> \
-      <h2>Fire detection system dashboard</h2> \
-      <div class=\"content\"> \
-         <div class=\"card-grid\"> \
-            <div class=\"card\"> \
-               <h1> Effectors control </h1> \
-               <p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual pump control</strong></p> \
-               <p>Pump state: <strong> pustat </strong></p> \
-               <p>          <a href=\"/pump2on\"><button class=\"button\">ON</button></a>          <a href=\"/pump2off\"><button class=\"button button2\">OFF</button></a>        </p> \
-               <p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual alarm control</strong></p> \
-               <p>Alarm state: <strong> alstat </strong></p> \
-               <p>          <a href=\"/alarm2on\"><button class=\"button\">ON</button></a>          <a href=\"/alarm2off\"><button class=\"button button2\">OFF</button></a>        </p> \
-               <hr /> \
-               <h1> Nodes readings </h1> \
-               <p> <a href=\"/\"><button class=\"button\">Refresh</button></a> </p> \
-               <h2> Node number 1 </h2> \
-               <p> Temperature: %d </p> \
-               <p> Smoke: %d </p> \
-               <p> Fire: %d </p> \
-               <h2> Node number 2 </h2> \
-               <p> Temperature: %d </p> \
-               <p> Smoke: %d </p> \
-               <p> Fire: %d </p> \
-            </div> \
-         </div> \
-      </div> \
-   </body> \
+<head> \
+<style type=\"text/css\"> \
+html {  font-family: Arial;  display: inline-block;  margin: 0px auto;  text-align: center;} \
+h1{  color: #070812;  padding: 2vh;} \
+.button {  display: inline-block;  background-color: #b30000; //red color  border: none;  border-radius: 4px;  color: white;  padding: 16px 40px;  text-decoration: none;  font-size: 30px;  margin: 2px;  cursor: pointer;} \
+.button2 {  background-color: #364cf4; //blue color} \
+.content {   padding: 50px;} \
+.card-grid {  max-width: 800px;  margin: 0 auto;  display: grid;  grid-gap: 2rem;  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));} \
+.card {  background-color: white;  box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);} \
+.card-title {  font-size: 1.2rem;  font-weight: bold;  color: #034078} \
+</style> \
+<title>Fire detection system dashboard</title> \
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> \
+<link rel=\"icon\" href=\"data:,\"> \
+<link rel=\"stylesheet\" href=\"https://use.fontawesome.com/releases/v5.7.2/css/all.css\"    integrity=\"sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr\" crossorigin=\"anonymous\"> \
+<link rel=\"stylesheet\" type=\"text/css\" > \
+</head> \
+<body> \
+<h2>Fire detection system dashboard</h2> \
+<div class=\"content\"> \
+<div class=\"card-grid\"> \
+<div class=\"card\"> \
+<h1> Effectors control </h1> \
+<p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual pump control</strong></p>";
+
+char pump_state[] = "<p>Pump state: <strong> %d </strong></p> \
+<p>          <a href=\"/pump2on\"><button class=\"button\">ON</button></a>          <a href=\"/pump2off\"><button class=\"button button2\">OFF</button></a>        </p> \
+<p><i class=\"fa-regular fa-pump fa-2x\" style=\"color:#c81919;\"></i>     <strong>Manual alarm control</strong></p>";
+
+char pump_state_parsed[320];
+
+char alarm_state[] = "<p>Alarm state: <strong> %d </strong></p> \
+<p>          <a href=\"/alarm2on\"><button class=\"button\">ON</button></a>          <a href=\"/alarm2off\"><button class=\"button button2\">OFF</button></a>        </p> \
+<hr /> \
+<h1> Nodes readings </h1> \
+<p> <a href=\"/\"><button class=\"button\">Refresh</button></a> </p>";
+
+char alarm_state_parsed[320];
+
+char node_state[] = "<h2> Node %d </h2> \
+<p> Temperature: %d C </p> \
+<p> Smoke: %d </p> \
+<p> Fire: %d </p>";
+
+char node_state_parsed[120];
+
+char ending_seq[] = "</div> \
+</div> \
+</div> \
+</body> \
 </html>";
+
+esp_err_t parse_webpage_code(httpd_req_t *req){
+    // send opening sequence
+    httpd_resp_send_chunk(req, page_src, HTTPD_RESP_USE_STRLEN);
+
+    // update pump state
+    sprintf(pump_state_parsed, pump_state, sys_stat_get_pump());
+    httpd_resp_send_chunk(req, pump_state_parsed, HTTPD_RESP_USE_STRLEN);
+
+    // update alarm state
+    sprintf(alarm_state_parsed, alarm_state, sys_stat_get_alarm());
+    httpd_resp_send_chunk(req, alarm_state_parsed, HTTPD_RESP_USE_STRLEN);
+
+    // update nodes
+    for(int i = 0; i < NODES_MAX_NUM; i++){
+        if(sys_stat_get_online(i)){
+            sprintf(node_state_parsed, node_state, 
+            i, sys_stat_get_temp(i), sys_stat_get_smoke(i), sys_stat_get_fire(i));
+            httpd_resp_send_chunk(req, node_state_parsed, HTTPD_RESP_USE_STRLEN);
+        }
+    }
+
+    // send closing sequence
+    httpd_resp_send_chunk(req, ending_seq, HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send_chunk(req, NULL, 0);
+}
 
 void web_app_task(void* params);
 
@@ -105,43 +136,39 @@ httpd_uri_t uri_array[] = {
 esp_err_t get_req_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "HTTP get requested\n");
-    return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
+    return parse_webpage_code(req);
 }
 
 esp_err_t pump_on_handler(httpd_req_t *req)
 {
-    //led_strip_set_pixel(led_strip, 0, 0, 16, 0);
-    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP pump on requested\n");
-    //parse_webpage(page_src, system_status);
-    return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
+    sys_stat_set_pump(true);
+    return parse_webpage_code(req);
 }
 
 esp_err_t pump_off_handler(httpd_req_t *req)
 {
-    //led_strip_set_pixel(led_strip, 0, 16, 0, 0);
-    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP pump off requested\n");
-    return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
+    sys_stat_set_pump(false);
+    return parse_webpage_code(req);
 }
 
 esp_err_t alarm_on_handler(httpd_req_t *req)
 {
-    //led_strip_set_pixel(led_strip, 0, 0, 16, 16);
-    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP alarm on requested\n");
-    return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
+    sys_stat_set_alarm(true);
+    return parse_webpage_code(req);
 }
 
 esp_err_t alarm_off_handler(httpd_req_t *req)
 {
-    //led_strip_set_pixel(led_strip, 0, 16, 16, 0);
-    //led_strip_refresh(led_strip);
     ESP_LOGI(TAG, "HTTP alarm off requested\n");
-    return httpd_resp_send(req, page_src, HTTPD_RESP_USE_STRLEN);
+    sys_stat_set_alarm(false);
+    return parse_webpage_code(req);
 }
 
 esp_err_t web_app_start(void){
+
     ESP_LOGI(TAG, "starting web app");
     web_connect();
 
@@ -149,25 +176,5 @@ esp_err_t web_app_start(void){
     setup_server(uri_array, uri_array_size);
     ESP_LOGI(TAG, "numner of uris created: %d", uri_array_size);
 
-    xTaskCreate(web_app_task, "wa_task", 2*1024, NULL, 3, NULL);
-
     return ESP_OK;
-}
-
-void web_app_task(void* params){
-    while(1){
-        if(xQueueReceive(gathered_data_queue, &system_status, 1000) == pdTRUE){
-            ESP_LOGI(TAG, "GATHERED DATA");
-            /*for(uint8_t i = 0; i < NODES_MAX_NUM; i++){
-                printf("ID = %d, online = %d", i, system_status.nodes[i].online);
-                if(system_status.nodes[i].online){
-                    printf(", fire = %d, smoke = %d, temp = %d, last message time = %d\n",
-                    system_status.nodes[i].fire,
-                    system_status.nodes[i].smoke,
-                    (int)system_status.nodes[i].temp,
-                    (int)system_status.nodes[i].last_message_time);
-                }
-            }*/
-        }
-    }
 }
