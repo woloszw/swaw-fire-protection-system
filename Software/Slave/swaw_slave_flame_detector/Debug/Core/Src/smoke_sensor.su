@@ -1,1 +1,1 @@
-../Core/Src/smoke_sensor.c:4:19:smoke_sensor_read	40	static
+../Core/Src/smoke_sensor.c:5:19:smoke_sensor_read	48	static

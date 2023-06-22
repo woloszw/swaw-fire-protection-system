@@ -102,9 +102,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t Test[] = "Hello World !!!\r\n"; //Data to send
-  uint8_t txbuf[32];
 
+  //init temperature sensor
   if (ds18b20_init() != HAL_OK) {
     Error_Handler();
   }
@@ -115,6 +114,7 @@ int main(void)
   }
 
   HAL_CAN_Start(&hcan);
+
   //dip switch slave id read
   int tmp_id;
   tmp_id =HAL_GPIO_ReadPin(ID_0_PIN_GPIO_Port, ID_0_PIN_Pin);
@@ -130,39 +130,17 @@ int main(void)
   CAN_TxHeaderTypeDef txHeader;
   uint32_t              TxMailbox;
   uint32_t can_node_id_base = slave_id << 8;
-  //connect to master frame
-
-  uint8_t connect_byte = 0xff;
-  txHeader.StdId = can_node_id_base;
-  txHeader.ExtId = 0;      // ID rozszerzone (0 dla ramki standardowej)
-  txHeader.RTR = CAN_RTR_DATA;  // Tryb transmisji - dane
-  txHeader.IDE = CAN_ID_STD;    // Format identyfikatora - standardowy
-  txHeader.DLC = 1;  // Długość danych (w bajtach)
-
-  if (HAL_CAN_AddTxMessage(&hcan, &txHeader, &connect_byte, &TxMailbox) == HAL_OK) {
- 	    // Pomyślnie dodano wiadomość do kolejki transmisji
- 	  } else {
- 	    // Błąd podczas dodawania wiadomości do kolejki transmisji
- 	  }
-
- 	  // Czekanie na zakończenie transmisji
- 	  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 3) {
- 	    // Wszystkie skrzynki nadawcze są wolne, transmisja zakończona
- 	  }
-
-
-
 
 
 
   uint8_t tx_can_data[6];
 
-  txHeader.StdId = can_node_id_base | 0x1;  // Node ID
+  txHeader.StdId = can_node_id_base | 0x1;  // Node ID - LSB == 1 - payload id
 
-  txHeader.ExtId = 0;      // ID rozszerzone (0 dla ramki standardowej)
-  txHeader.RTR = CAN_RTR_DATA;  // Tryb transmisji - dane
-  txHeader.IDE = CAN_ID_STD;    // Format identyfikatora - standardowy
-  txHeader.DLC = 6;  // Długość danych (w bajtach)
+  txHeader.ExtId = 0;      // // Standard frame
+  txHeader.RTR = CAN_RTR_DATA;  //  trans mode - data
+  txHeader.IDE = CAN_ID_STD;    //standart id format
+  txHeader.DLC = 6;  // length (in bytes)
 
 
 
@@ -173,46 +151,34 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  sprintf((char*)txbuf, "ID: %d\r\n", slave_id);
-//	  HAL_UART_Transmit(&huart2,txbuf,strlen(txbuf),10);// Sending in normal mode
+
 	  while (1)
 	  {
-
-	    ds18b20_start_measure(NULL);
-	    HAL_Delay(750);
-	    payload_slv.temp_val = ds18b20_get_temp(NULL);
-
-
-//	  sprintf((char*)txbuf, "Temp vlaue: %d\r\n", payload_slv.temp_val);
-//	  HAL_UART_Transmit(&huart2,txbuf,strlen(txbuf),10);// Sending in normal mode
-//
-//
-//
-	  flame_sensor_read(&payload_slv.flame_val);
-//	  sprintf((char*)txbuf, "Flame vlaue: %d\r\n", payload_slv.flame_val);
-//	  HAL_UART_Transmit(&huart2,txbuf,strlen(txbuf),10);// Sending in normal mode
-	  HAL_Delay(1000);
-	  smoke_sensor_read(&payload_slv.smoke_val);
-//	  sprintf((char*)txbuf, "Smoke vlaue: %d\r\n", payload_slv.smoke_val);
-//	  HAL_UART_Transmit(&huart2,txbuf,strlen(txbuf),10);// Sending in normal mode
-//
-//
-//	  HAL_UART_Transmit(&huart2,Test,strlen(Test),10);// Sending in normal mode
-	  memcpy(tx_can_data, &payload_slv, sizeof(payload_slv));
-
-	  if (HAL_CAN_AddTxMessage(&hcan, &txHeader, tx_can_data, &TxMailbox) == HAL_OK) {
-	    // Pomyślnie dodano wiadomość do kolejki transmisji
-	  } else {
-	    // Błąd podczas dodawania wiadomości do kolejki transmisji
-	  }
-
-	  // Czekanie na zakończenie transmisji
-	  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 3) {
-	    // Wszystkie skrzynki nadawcze są wolne, transmisja zakończona
-	  }
+		  //temp measure
+		  ds18b20_start_measure(NULL);
+		  HAL_Delay(750);
+		  payload_slv.temp_val = ds18b20_get_temp(NULL);
 
 
-	  HAL_Delay(1000);
+		  //flame measure
+		  flame_sensor_read(&payload_slv.flame_val);
+		  //smoke measure
+		  smoke_sensor_read(&payload_slv.smoke_val);
+		  //send to master via can
+		  memcpy(tx_can_data, &payload_slv, sizeof(payload_slv));
+
+		  if (HAL_CAN_AddTxMessage(&hcan, &txHeader, tx_can_data, &TxMailbox) == HAL_OK) {
+			  // Successfully add frame to queue
+		  } else {
+			  //Error when try add frame to queue
+		  }
+
+		  // wait for send
+		  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 3) {
+			  // Send box is free, all frames are send
+		  }
+
+		  HAL_Delay(1000);
 
 	  }
 
@@ -220,7 +186,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  }
+  }
   /* USER CODE END 3 */
 }
 
@@ -264,6 +230,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 

@@ -1,0 +1,6 @@
+wire.c:10:13:delay_us	2
+wire.c:5:19:wire_init	1
+wire.c:17:19:wire_reset	1
+wire.c:46:9:wire_read	3
+wire.c:73:6:wire_write	3
+wire.c:95:9:wire_crc	4

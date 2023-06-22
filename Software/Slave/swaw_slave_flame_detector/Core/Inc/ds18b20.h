@@ -4,21 +4,21 @@
 
 #define DS18B20_ROM_CODE_SIZE		8
 
-// Inicjalizacja 1-wire
+// Init 1 wire
 // return - HAL_OK/HAL_ERROR
 HAL_StatusTypeDef ds18b20_init(void);
 
-// Odczytaj adres czujnika i policz CRC
-// rom_code - miejsce do zapisu odczytanych danych
+// read sensor address and calculate crc sum
+// rom_code - place where save incoming data
 // return - HAL_OK/HAL_ERROR
 HAL_StatusTypeDef ds18b20_read_address(uint8_t* rom_code);
 
-// Rozpocznij pomiar temperatury
-// rom_code - adres czujnika lub NULL
+// Start temperature measure
+// rom_code - sensor address or NULL
 // return - HAL_OK/HAL_ERROR
 HAL_StatusTypeDef ds18b20_start_measure(const uint8_t* rom_code);
 
-// Pobierz temperaturę
-// rom_code - adres czujnika lub NULL
-// return - temperatura w stopniach Celsjusza
+// Take temperature
+// rom_code - sensor address or NULL
+// return - temperature (to celsius divide by 16)
 int16_t ds18b20_get_temp(const uint8_t* rom_code);
